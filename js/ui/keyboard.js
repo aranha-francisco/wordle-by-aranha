@@ -27,11 +27,20 @@ const SVG = (paths) =>
   ` stroke-linecap="round" stroke-linejoin="miter" aria-hidden="true">${paths}</svg>`;
 
 const ICONS = {
-  // backspace: tag with a 90-degree point, x centred in the box half
+  /* backspace: tag with a 90-degree point, x optically centred in the box.
+   *
+   * The box is wider than the obvious choice and the x is NOT on the rectangle's
+   * midpoint, on purpose. The rectangle's left edge is where the diagonals meet
+   * (x=9.8) and carries no stroke, but the right edge is a real wall whose inner
+   * face sits half a stroke inboard (21.71 - 1.24 = 20.47). Centring on the
+   * midpoint left the x 3.4x tighter on the right than the left — it visibly
+   * hugged the wall. Centring between the bare left line and the right wall's
+   * INNER FACE puts both gaps at ~1.6.
+   */
   Backspace: SVG(
-    '<path d="M10.26 5H19.26A2 2 0 0 1 21.26 7V17A2 2 0 0 1 19.26 19H10.26L3.26 12Z"/>' +
-    '<line x1="13.26" y1="9.5" x2="18.26" y2="14.5"/>' +
-    '<line x1="18.26" y1="9.5" x2="13.26" y2="14.5"/>'
+    '<path d="M9.8 5H19.71A2 2 0 0 1 21.71 7V17A2 2 0 0 1 19.71 19H9.8L2.8 12Z"/>' +
+    '<line x1="12.64" y1="9.5" x2="17.64" y2="14.5"/>' +
+    '<line x1="17.64" y1="9.5" x2="12.64" y2="14.5"/>'
   ),
   // enter: riser turning left into a shaft, 90-degree arrowhead
   Enter: SVG(
