@@ -1,5 +1,5 @@
 // Bump CACHE when any asset below changes so clients pick up the new build.
-const CACHE = 'wordle-v7';
+const CACHE = 'wordle-v8';
 
 const ASSETS = [
   './',

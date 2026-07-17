@@ -1,21 +1,17 @@
 export class Modal {
   constructor({ onNewGame }) {
     this.overlay = document.getElementById('overlay');
+    this.eyebrowEl = document.getElementById('modal-eyebrow');
     this.wordEl = document.getElementById('modal-word');
-    this.subEl = document.getElementById('modal-sub');
     this.patternEl = document.getElementById('modal-pattern');
     this.statsEl = document.getElementById('modal-stats');
     this.newBtn = document.getElementById('btn-new');
 
     this.newBtn.addEventListener('click', onNewGame);
 
-    // Tapping the dimmed backdrop closes; the board stays exactly as it was.
-    this.overlay.addEventListener('click', (e) => {
-      if (e.target === this.overlay) this.hide();
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isOpen) this.hide();
-    });
+    // Deliberately not dismissible — no backdrop click, no Escape. The round is
+    // over, so "New game" is the only way out; closing it used to strand the
+    // player on a dead board with no way to start again short of a reload.
   }
 
   get isOpen() { return !this.overlay.hidden; }
@@ -24,10 +20,12 @@ export class Modal {
     const won = game.status === 'won';
     const tries = game.guesses.length;
 
-    this.wordEl.textContent = game.answer;
-    this.subEl.textContent = won
+    // The label sits above the word and never repeats it — "the word was WEIGH"
+    // under a big WEIGH said the same thing twice.
+    this.eyebrowEl.textContent = won
       ? `solved in ${tries} ${tries === 1 ? 'try' : 'tries'}`
-      : `the word was ${game.answer.toUpperCase()}`;
+      : 'the word was';
+    this.wordEl.textContent = game.answer;
 
     this.renderPattern(game.results);
     this.renderStats(stats);

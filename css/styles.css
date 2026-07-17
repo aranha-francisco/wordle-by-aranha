@@ -131,7 +131,7 @@ button {
     calc(var(--safe-left) + 12px);
 }
 
-.header, .main, .keyboard, .skip { width: 100%; }
+.header, .main, .keyboard, .skip, .footer { width: 100%; }
 
 .header { text-align: center; position: relative; }
 
@@ -224,7 +224,8 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tile[data-anim="flip"], .tile[data-anim="pop"], .row[data-anim="shake"] { animation: none; }
+  .tile[data-anim="flip"], .tile[data-anim="pop"], .row[data-anim="shake"],
+  .skip[data-anim="pulse"] { animation: none; }
 }
 
 /* ---------- intro ----------
@@ -260,7 +261,8 @@ button {
 
 .app[data-intro="playing"] .main,
 .app[data-intro="playing"] .keyboard,
-.app[data-intro="playing"] .skip {
+.app[data-intro="playing"] .skip,
+.app[data-intro="playing"] .footer {
   animation: intro-reveal 400ms ease 700ms both;
 }
 
@@ -357,9 +359,33 @@ button {
   color: var(--accent-text);
 }
 
-.skip:disabled {
-  opacity: 0.35;
-  pointer-events: none;
+/* Press feedback: dips down and settles back with a slight overshoot. Driven by
+   JS rather than :active because the button disables the instant it's clicked,
+   which would kill an :active-based animation mid-play. */
+.skip[data-anim="pulse"] {
+  animation: skip-pulse 280ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+@keyframes skip-pulse {
+  0%   { transform: translateY(0) scale(1); }
+  38%  { transform: translateY(3px) scale(0.975); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+.skip:disabled { pointer-events: none; }
+
+/* Don't dim it mid-pulse — the press should finish before it greys out. */
+.skip:disabled:not([data-anim="pulse"]) { opacity: 0.35; }
+
+/* ---------- footer ---------- */
+.footer {
+  padding-top: clamp(6px, 1.2vh, 14px);
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 1px;
+  text-indent: 0.5px;
+  text-align: center;
+  color: var(--tile-active-border);
 }
 
 /* ---------- toast ---------- */
@@ -421,20 +447,23 @@ button {
 
 @keyframes rise { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
 
+/* Small label above the answer: "the word was" / "solved in 4 tries".
+   The negative margin pulls it against the word so the two read as one block
+   rather than two items spaced by the modal's gap. */
+.modal-eyebrow {
+  margin: 0 0 -10px;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-regular);
+  color: var(--text-dim);
+}
+
 .modal-word {
-  margin: 0;
+  margin: 2px 0 0;
   font-size: var(--fs-modal-word);
   font-weight: var(--fw-bold);
   letter-spacing: 4px;
   text-indent: 2px;
   text-transform: uppercase;
-}
-
-.modal-sub {
-  margin: -8px 0 0;
-  font-size: var(--fs-body);
-  font-weight: var(--fw-regular);
-  color: var(--text-dim);
 }
 
 .pattern { display: flex; flex-direction: column; gap: 3px; }
@@ -514,8 +543,15 @@ button {
   }
 }
 
-/* Short viewports (landscape phones, small laptops): reclaim vertical space. */
+/* Short viewports (landscape phones, small laptops): reclaim vertical space.
+   The tile floor drops below the 44px default here — with the footer added, a
+   1280x600 window overflowed by ~13px and grew a scrollbar. */
 @media (max-height: 620px) {
-  :root { --col-gap: 12px; --key-h: 42px; }
+  :root {
+    --col-gap: 11px;
+    --key-h: 42px;
+    --tile-size: clamp(34px, 6.4vh, 88px);
+  }
   .app { justify-content: flex-start; padding-top: calc(var(--safe-top) + 12px); }
+  .footer { padding-top: 4px; }
 }

@@ -115,12 +115,23 @@ async function submit() {
   if (game.isOver) finish();
 }
 
+const SKIP_PULSE_MS = 280; // must match the skip-pulse animation in styles.css
+
+function pulseSkip() {
+  skipBtn.dataset.anim = '';
+  void skipBtn.offsetWidth; // restart the animation
+  skipBtn.dataset.anim = 'pulse';
+  setTimeout(() => { skipBtn.dataset.anim = ''; }, SKIP_PULSE_MS);
+}
+
 /** Give up: flip the answer into the next row, then end the round as a loss. */
 async function skip() {
   if (locked || !game || game.isOver) return;
 
   const outcome = game.reveal();
   if (!outcome.ok) return;
+
+  pulseSkip();
 
   saveGame(game);
 
