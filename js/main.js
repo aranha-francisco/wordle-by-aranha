@@ -3,8 +3,10 @@ import { defaultWordList } from './words.js';
 import { Board } from './ui/board.js';
 import { Keyboard } from './ui/keyboard.js';
 import { Modal } from './ui/modal.js';
+import { SettingsModal } from './ui/settings-modal.js';
 import { toast } from './ui/toast.js';
 import { playIntro } from './ui/intro.js';
+import { applySettings, getSettings } from './settings.js';
 import { loadStats, loadGame, saveGame, recordResult } from './storage.js';
 
 const wordList = defaultWordList;
@@ -16,14 +18,27 @@ let locked = false; // true while a row is mid-flip, or while the intro plays
 const board = new Board(document.getElementById('board'));
 const keyboard = new Keyboard(document.getElementById('keyboard'), handleKey);
 const modal = new Modal({ onNewGame: startGame });
+const settingsModal = new SettingsModal();
 const skipBtn = document.getElementById('btn-skip');
+const hintBtn = document.getElementById('btn-hint');
+const settingsBtn = document.getElementById('btn-settings');
+
+// The inline script in index.html already set these before first paint; this
+// keeps the meta theme-color in step and covers a blocked-storage first run.
+applySettings(getSettings());
 
 skipBtn.addEventListener('click', skip);
+hintBtn.addEventListener('click', hint);
+settingsBtn.addEventListener('click', () => {
+  pulseIcon(settingsBtn);
+  settingsModal.show();
+});
 
 function render() {
   board.render(game);
   keyboard.render(game.letterStates);
   skipBtn.disabled = game.isOver || locked;
+  hintBtn.disabled = game.isOver || locked;
 }
 
 /** Random word, but never the same one twice in a row. */
@@ -115,13 +130,33 @@ async function submit() {
   if (game.isOver) finish();
 }
 
-const SKIP_PULSE_MS = 280; // must match the skip-pulse animation in styles.css
+const SKIP_PULSE_MS = 280; // must match skip-pulse in styles.css
+const ICON_PULSE_MS = 320; // must match icon-press / icon-fill / icon-tint
 
-function pulseSkip() {
-  skipBtn.dataset.anim = '';
-  void skipBtn.offsetWidth; // restart the animation
-  skipBtn.dataset.anim = 'pulse';
-  setTimeout(() => { skipBtn.dataset.anim = ''; }, SKIP_PULSE_MS);
+/** Restart-safe press animation; the element may be disabled mid-play. */
+function pulse(el, ms) {
+  el.dataset.anim = '';
+  void el.offsetWidth; // force reflow so the animation restarts
+  el.dataset.anim = 'pulse';
+  setTimeout(() => { el.dataset.anim = ''; }, ms);
+}
+
+const pulseSkip = () => pulse(skipBtn, SKIP_PULSE_MS);
+const pulseIcon = (el) => pulse(el, ICON_PULSE_MS);
+
+/** Reveal one letter the player hasn't already pinned down. */
+function hint() {
+  pulseIcon(hintBtn);
+  if (locked || !game || game.isOver) return;
+
+  const outcome = game.hint();
+  if (!outcome.ok) {
+    toast(outcome.reason);
+    return;
+  }
+
+  saveGame(game);
+  render();
 }
 
 /** Give up: flip the answer into the next row, then end the round as a loss. */
@@ -159,6 +194,7 @@ function finish() {
 
 document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (settingsModal.isOpen) return; // don't type into the board behind the dialog
   if (modal.isOpen && e.key !== 'Escape') return;
   if (e.key === 'Enter' || e.key === 'Backspace' || /^[a-zA-Z]$/.test(e.key)) {
     e.preventDefault();

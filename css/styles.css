@@ -32,36 +32,10 @@
   --fw-medium: 500;
   --fw-bold: 600;
 
-  --bg: #121516;
-  --text: #e8e8e8;
-  --text-dim: #8a9296;
-
-  --tile-empty-bg: #1f2426;
-  --tile-empty-border: #2c3335;
-  --tile-active-border: #6d2434;
-
-  --correct: #538d4e;
-  --correct-text: #d6ecd4;
-  --present: #b59f3b;
-  --present-text: #f4e8bd;
-
-  /* Eliminated letters read as a hole punched out of the board: darker than both
-     an empty tile and an untouched key, so "ruled out" is obvious at a glance.
-     The old #3a3f42 sat a hair above the #2c3235 key and was near-invisible. */
-  --absent: #0d0f10;
-  --absent-text: #5c666b;
-  --absent-border: #1a1f21;
-
-  --key-bg: #2c3235;
-  /* enter + backspace share one accent; the old deeper #3d1420 backspace is gone */
-  --key-action: #6d2434;
-
-  --accent: #6d2434;
-  --accent-text: #f5dde1;
-  /* Accented copy + the intro flourish. The raw --accent is unreadable as text
-     on --bg (1.71:1); this is the same hue lifted until it clears WCAG AA for
-     small text (4.68:1). Keep any replacement above 4.5:1. */
-  --accent-soft: #c85f77;
+  /* --accent / --accent-soft / --accent-text come from the [data-accent] blocks
+     below; everything accent-flavoured derives from them so a swap is one attr. */
+  --tile-active-border: var(--accent);
+  --key-action: var(--accent);
 
   --tile-size: 44px;
   --tile-gap: 5px;
@@ -82,6 +56,108 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ---------- accents ----------
+   The shipped crimson is hsl(347, 50%, 28%). The other four are the same
+   lightness and saturation at different hues, so they read as one family and
+   none of them jumps out as brighter than the rest.
+
+   Each accent carries three values, because one hex can't do all three jobs:
+     --accent       surface colour  (keys, buttons, the active-row outline)
+     --accent-soft  accent-coloured TEXT on --bg; the raw accent is ~1.7:1 there,
+                    so this is the same hue lifted past 4.5:1
+     --accent-text  text ON --accent (the enter key, the new-game button) */
+:root,
+:root[data-accent="crimson"] {
+  --accent: #6d2434;       /* hsl(347, 50%, 28%) */
+  --accent-soft: #c85f77;
+  --accent-text: #f5dde1;
+}
+
+:root[data-accent="slate"] {
+  --accent: #24466d;       /* hsl(212, 50%, 28%) */
+  --accent-soft: #5f90c9;
+  --accent-text: #dde7f4;
+}
+
+:root[data-accent="teal"] {
+  --accent: #246d61;       /* hsl(170, 50%, 28%) */
+  --accent-soft: #5ec9b8;
+  --accent-text: #ddf4f0;
+}
+
+:root[data-accent="amber"] {
+  --accent: #6d5024;       /* hsl(36, 50%, 28%) */
+  --accent-soft: #c99f5e;
+  --accent-text: #f4eadd;
+}
+
+:root[data-accent="charcoal"] {
+  --accent: #4d4a44;       /* hsl(40, 6%, 28%) — same depth, saturation pulled out */
+  --accent-soft: #9a968e;
+  --accent-text: #e9e9e7;
+}
+
+/* ---------- themes ---------- */
+:root,
+:root[data-theme="dark"] {
+  --bg: #121516;
+  --text: #e8e8e8;
+  --text-dim: #8a9296;
+
+  --surface: #1b2022;
+  --surface-border: #2c3335;
+  --scrim: rgba(8, 10, 11, 0.72);
+
+  --tile-empty-bg: #1f2426;
+  --tile-empty-border: #2c3335;
+  --tile-filled-border: #3b4447;
+
+  --correct: #538d4e;
+  --correct-text: #d6ecd4;
+  --present: #b59f3b;
+  --present-text: #f4e8bd;
+
+  /* Eliminated letters read as a hole punched out of the board: darker than both
+     an empty tile and an untouched key, so "ruled out" is obvious at a glance. */
+  --absent: #0d0f10;
+  --absent-text: #5c666b;
+  --absent-border: #1a1f21;
+
+  --key-bg: #2c3235;
+}
+
+/* Warm beige rather than white — the counterpart to the dark theme, not a
+   flashbang. Absent still recedes (darker than the keys), just inverted. */
+:root[data-theme="light"] {
+  --bg: #efe7d8;
+  --text: #332f28;
+  --text-dim: #7d7568;
+
+  --surface: #f7f1e4;
+  --surface-border: #ddd2bb;
+  --scrim: rgba(60, 48, 30, 0.42);
+
+  --tile-empty-bg: #e5dcc9;
+  --tile-empty-border: #d2c7b0;
+  --tile-filled-border: #bfb298;
+
+  --correct: #5c9455;
+  --correct-text: #eef7ec;
+  --present: #b9a041;
+  --present-text: #fbf6e2;
+
+  --absent: #a79d8c;
+  --absent-text: #efeae2;
+  --absent-border: #9a8f7d;
+
+  --key-bg: #ded4c0;
+
+  /* The lifted tint is built for a dark background; on beige it disappears.
+     The raw accent already reads well here, so use it directly.
+     Must stay after the [data-accent] blocks to win the cascade. */
+  --accent-soft: var(--accent);
 }
 
 /* ---------- base ---------- */
@@ -111,6 +187,13 @@ button {
   color: inherit;
   border: 0;
   cursor: pointer;
+}
+
+/* Keyboard focus only — replaces the browser's default ring, which clashed with
+   the palette. Pointer users never see it. */
+:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 2px;
 }
 
 /* ---------- layout: one centered column ---------- */
@@ -145,6 +228,71 @@ button {
   font-weight: var(--fw-bold);
   letter-spacing: 5px;
   text-indent: 2.5px;
+}
+
+/* ---------- header icon buttons ----------
+   Absolutely positioned so they sit at the column's edges without shifting the
+   centred wordmark. Vertically centred with margin rather than a transform,
+   because the pulse animation owns `transform`. */
+.icon-btn {
+  position: absolute;
+  top: 50%;
+  margin-top: -20px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-key);
+  background: transparent; /* no outline at rest — the fill only exists on press */
+  color: var(--accent-soft);
+  z-index: 1;
+}
+
+.icon-btn--hint { left: 0; }
+.icon-btn--settings { right: 0; }
+
+.icon-btn svg {
+  position: relative;
+  width: 21px;
+  height: 21px;
+  z-index: 1;
+}
+
+/* The "invisible rounded outline": a fill layer that is transparent until
+   pressed. Animating this layer's opacity rather than background-color avoids
+   the grey mid-fade you get interpolating a colour to `transparent`. */
+.icon-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-key);
+  background: var(--accent);
+  opacity: 0;
+}
+
+.icon-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+.icon-btn[data-anim="pulse"] { animation: icon-press 320ms cubic-bezier(0.34, 1.4, 0.64, 1); }
+.icon-btn[data-anim="pulse"]::before { animation: icon-fill 320ms ease-out; }
+.icon-btn[data-anim="pulse"] svg { animation: icon-tint 320ms ease-out; }
+
+@keyframes icon-press {
+  0%   { transform: translateY(0) scale(1); }
+  38%  { transform: translateY(2px) scale(0.9); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes icon-fill {
+  0%   { opacity: 0; }
+  30%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes icon-tint {
+  0%   { color: var(--accent-soft); }
+  30%  { color: var(--accent-text); }
+  100% { color: var(--accent-soft); }
 }
 
 .subtitle {
@@ -194,7 +342,13 @@ button {
   user-select: none;
 }
 
-.tile[data-filled="true"] { border-color: #3b4447; }
+.tile[data-filled="true"] { border-color: var(--tile-filled-border); }
+
+/* Hint ghost: the revealed letter sitting in an untyped slot. */
+.tile[data-hint="true"] {
+  color: var(--accent-soft);
+  opacity: 0.55;
+}
 
 .row[data-active="true"] .tile {
   border: 2px solid var(--tile-active-border);
@@ -225,7 +379,8 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
   .tile[data-anim="flip"], .tile[data-anim="pop"], .row[data-anim="shake"],
-  .skip[data-anim="pulse"] { animation: none; }
+  .skip[data-anim="pulse"], .icon-btn[data-anim="pulse"],
+  .icon-btn[data-anim="pulse"]::before, .icon-btn[data-anim="pulse"] svg { animation: none; }
 }
 
 /* ---------- intro ----------
@@ -320,7 +475,15 @@ button {
   transition: background 120ms ease, color 120ms ease, transform 60ms ease;
 }
 
-.key[data-wide="true"] { flex: 1.5 1 0; font-size: var(--fs-label); }
+.key[data-wide="true"] { flex: 1.5 1 0; }
+
+/* Icon keys (enter / backspace). Sized off the key height so they track the
+   keyboard across breakpoints instead of needing their own media queries. */
+.key svg {
+  width: clamp(17px, calc(var(--key-h) * 0.4), 24px);
+  height: clamp(17px, calc(var(--key-h) * 0.4), 24px);
+  display: block;
+}
 .key[data-key="Enter"],
 .key[data-key="Backspace"] { background: var(--key-action); color: var(--accent-text); }
 
@@ -402,7 +565,7 @@ button {
 
 .toast {
   background: var(--text);
-  color: #121516;
+  color: var(--bg);
   padding: 10px 16px;
   border-radius: var(--r-btn);
   font-size: var(--fs-body);
@@ -418,7 +581,7 @@ button {
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(8, 10, 11, 0.72);
+  background: var(--scrim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -431,10 +594,13 @@ button {
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
 .modal {
+  /* containing block for the settings close button; without it the absolutely
+     positioned X anchors to the fixed overlay and lands in the viewport corner */
+  position: relative;
   width: 100%;
   max-width: 340px;
-  background: #1b2022;
-  border: 1px solid #2c3335;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
   border-radius: var(--r-modal);
   padding: 24px 20px;
   text-align: center;
@@ -473,7 +639,7 @@ button {
 .sq[data-state="present"] { background: var(--present); }
 /* the pattern grid sits on the lighter modal surface, so the near-black
    eliminated swatch needs an outline to stay visible as a square */
-.sq[data-state="absent"]  { background: var(--absent); box-shadow: inset 0 0 0 1px #2c3335; }
+.sq[data-state="absent"]  { background: var(--absent); box-shadow: inset 0 0 0 1px var(--surface-border); }
 
 .stats {
   display: flex;
@@ -494,6 +660,93 @@ button {
 }
 
 .modal-actions { display: flex; gap: 10px; width: 100%; }
+
+/* ---------- settings ---------- */
+.modal--settings {
+  align-items: stretch;
+  text-align: left;
+  gap: 20px;
+  max-width: 330px;
+  padding: 22px 20px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-key);
+  background: transparent;
+  color: var(--text-dim);
+  transition: color 120ms ease, transform 60ms ease;
+}
+
+.modal-close svg { width: 18px; height: 18px; }
+.modal-close:active { color: var(--text); transform: scale(0.92); }
+
+.settings-title {
+  margin: 0;
+  font-size: var(--fs-btn);
+  font-weight: var(--fw-bold);
+  letter-spacing: 1px;
+  text-indent: 0.5px;
+}
+
+.setting { display: flex; flex-direction: column; gap: 9px; }
+
+.setting-label {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  letter-spacing: 1px;
+  text-indent: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.segmented { display: flex; gap: 8px; }
+
+.segmented button {
+  flex: 1;
+  height: 38px;
+  border-radius: var(--r-key);
+  background: var(--key-bg);
+  color: var(--text);
+  font-size: var(--fs-key);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  transition: background 140ms ease, color 140ms ease, transform 60ms ease;
+}
+
+.segmented button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+.segmented button:active { transform: scale(0.97); }
+
+.swatches { display: flex; gap: 10px; }
+
+.swatch {
+  flex: 1;
+  height: 38px;
+  border-radius: var(--r-key);
+  background: var(--swatch);
+  transition: box-shadow 140ms ease, transform 60ms ease;
+}
+
+/* Ring drawn outside the swatch so the colour itself stays unobstructed. */
+.swatch[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text-dim);
+}
+
+.swatch:active { transform: scale(0.94); }
+
+/* Colours live here rather than in JS so the palette has one home. */
+.swatch[data-accent="crimson"]  { --swatch: #6d2434; }
+.swatch[data-accent="slate"]    { --swatch: #24466d; }
+.swatch[data-accent="teal"]     { --swatch: #246d61; }
+.swatch[data-accent="amber"]    { --swatch: #6d5024; }
+.swatch[data-accent="charcoal"] { --swatch: #4d4a44; }
 
 .btn {
   flex: 1;

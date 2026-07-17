@@ -54,6 +54,18 @@ export class Game {
     this.letterStates = {};
     this.statsRecorded = false; // guards against double-counting across reloads
     this.revealedWord = null;   // answer shown after a skip; NOT a guess
+    this.hints = new Set();     // positions revealed by the hint button
+  }
+
+  /** Positions the player has already pinned down with a correct letter. */
+  solvedPositions() {
+    const solved = new Set();
+    for (const guess of this.guesses) {
+      for (let i = 0; i < COLS; i++) {
+        if (guess[i] === this.answer[i]) solved.add(i);
+      }
+    }
+    return solved;
   }
 
   get row() { return this.guesses.length; }
@@ -92,6 +104,30 @@ export class Game {
   }
 
   /**
+   * Reveals one random letter the player hasn't already pinned down.
+   *
+   * Candidates exclude positions already guessed correctly (so a hint can never
+   * tell you something you know) and positions already hinted (so repeat clicks
+   * always yield new information).
+   *
+   * @returns {{ok: true, position: number, letter: string} | {ok: false, reason: string}}
+   */
+  hint() {
+    if (this.isOver) return { ok: false, reason: 'Game over' };
+
+    const solved = this.solvedPositions();
+    const candidates = [];
+    for (let i = 0; i < COLS; i++) {
+      if (!solved.has(i) && !this.hints.has(i)) candidates.push(i);
+    }
+    if (!candidates.length) return { ok: false, reason: 'Nothing left to reveal' };
+
+    const position = candidates[Math.floor(Math.random() * candidates.length)];
+    this.hints.add(position);
+    return { ok: true, position, letter: this.answer[position] };
+  }
+
+  /**
    * Give up: surface the answer in the next empty row and end the round as a loss.
    *
    * The revealed word is deliberately kept out of `guesses`/`results`. It was never
@@ -123,6 +159,7 @@ export class Game {
       status: this.status,
       statsRecorded: this.statsRecorded,
       revealedWord: this.revealedWord,
+      hints: [...this.hints],
     };
   }
 
@@ -137,6 +174,7 @@ export class Game {
     }
     game.wordList = wordList;
     game.statsRecorded = Boolean(data.statsRecorded);
+    game.hints = new Set(data.hints || []);
     // restore a skipped round: replaying guesses can't reproduce this
     if (data.revealedWord) {
       game.revealedWord = data.revealedWord;

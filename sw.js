@@ -1,5 +1,5 @@
 // Bump CACHE when any asset below changes so clients pick up the new build.
-const CACHE = 'wordle-v8';
+const CACHE = 'wordle-v9';
 
 const ASSETS = [
   './',
@@ -13,12 +13,14 @@ const ASSETS = [
   './js/words.js',
   './js/data/words-data.js',
   './js/storage.js',
+  './js/settings.js',
   './js/share.js',
   './js/ui/board.js',
   './js/ui/keyboard.js',
   './js/ui/modal.js',
   './js/ui/toast.js',
   './js/ui/intro.js',
+  './js/ui/settings-modal.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',

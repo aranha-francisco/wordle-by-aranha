@@ -51,9 +51,18 @@ export class Board {
       el.dataset.active = String(isCurrent);
 
       tiles.forEach((tile, c) => {
-        const letter = word[c] || '';
+        let letter = word[c] || '';
+
+        // Hint ghost: show the revealed letter in the active row while that slot
+        // is empty. Typing covers it; backspacing brings it back.
+        const showHint = !letter && isCurrent && game.hints?.has(c);
+        if (showHint) letter = game.answer[c];
+
         tile.textContent = letter;
-        tile.dataset.filled = String(Boolean(letter));
+        tile.dataset.filled = String(Boolean(letter) && !showHint);
+        if (showHint) tile.dataset.hint = 'true';
+        else delete tile.dataset.hint;
+
         if (result) tile.dataset.state = result[c];
         else delete tile.dataset.state;
       });
@@ -90,6 +99,7 @@ export class Board {
       tiles.forEach((tile, c) => {
         tile.textContent = word[c];
         tile.dataset.filled = 'true';
+        delete tile.dataset.hint;
         tile.dataset.state = result[c];
       });
       return Promise.resolve();
@@ -101,6 +111,7 @@ export class Board {
         const delay = c * FLIP_STAGGER_MS;
         tile.textContent = word[c];
         tile.dataset.filled = 'true';
+        delete tile.dataset.hint; // a skip reveal can land on a hinted slot
         tile.dataset.anim = '';
 
         timers.push(setTimeout(() => {

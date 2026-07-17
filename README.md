@@ -128,6 +128,54 @@ pattern and make a skipped round read as a win. It lives in `game.revealedWord`
 instead, and `board.render()` paints that row from it — without that branch the
 row would blank out on the next render, since it isn't a guess.
 
+## Hint
+
+`Game.hint()` reveals one random position the player hasn't pinned down.
+Candidates exclude positions already guessed correctly (a hint can never tell
+you something you know) and positions already hinted (repeat clicks always give
+new information). Verified over 1,000 randomised runs: zero reveals of a solved
+position, zero duplicates, zero wrong letters.
+
+The revealed letter renders as a **ghost** in the active row while that slot is
+empty — typing covers it, backspacing brings it back, and it follows to the next
+row until that position is guessed. It is stored as `game.hints` (a Set of
+positions) and persists across reloads. `board.revealRow()` clears the ghost
+attribute, since a skip reveal can land on a hinted slot.
+
+Hints are unlimited and don't affect stats.
+
+## Settings
+
+`js/settings.js` holds state, `js/ui/settings-modal.js` the UI. Changes apply
+live and persist on click — there is no save button, so the UI only ever
+reflects storage.
+
+**Colour values live in CSS, not JS.** `settings.js` knows ids and labels only;
+`[data-accent="…"]` blocks and `.swatch` rules in `styles.css` own the hexes, so
+the palette has one home.
+
+Each accent carries three values, because one hex can't do all three jobs:
+
+| token | job |
+|---|---|
+| `--accent` | surface colour (keys, buttons, active-row outline) |
+| `--accent-soft` | accent-coloured *text* on `--bg`; the raw accent is ~1.7:1 there, so this is the same hue lifted past 4.5:1 |
+| `--accent-text` | text *on* `--accent` (enter key, new-game button) |
+
+The five accents are the shipped crimson `hsl(347, 50%, 28%)` plus four hues at
+the **same lightness and saturation**, so none reads brighter than the rest.
+Light theme overrides `--accent-soft` back to `var(--accent)` — the lifted tint
+is built for a dark background and vanishes on beige. That override must stay
+**after** the `[data-accent]` blocks to win the cascade.
+
+Light mode is warm beige (`#efe7d8`), not white. Absent still recedes — darker
+than the keys, just inverted relative to dark mode.
+
+**The inline script in `index.html` is load-bearing.** It applies the saved
+theme/accent before first paint; without it the page paints dark and flips to
+light once the module runs. Its storage key must match `STORAGE_KEY` in
+`config.js`.
+
 ## Layout scaling
 
 Phones are width-constrained, so `--tile-size` is derived from `100vw`.
@@ -180,10 +228,9 @@ Build one from any source and pass it as the `wordList` option; nothing else
 needs to change. `COLS` in `config.js` drives board width, so non-5-letter
 lists mostly work already.
 
-**Themes** — every colour, radius (`--r-*`), font size (`--fs-*`) and weight
-(`--fw-*`) is a custom property on `:root` in `styles.css`. A theme mode means
-swapping that block (e.g. via a `data-theme` attribute on `<html>`); no JS or
-markup changes required.
+**Themes and accents are live** — see the Settings section below. Every colour,
+radius (`--r-*`), font size (`--fs-*`) and weight (`--fw-*`) is still a custom
+property on `:root`, so further variants are a token block, not new CSS.
 
 **Accent colours.** `--accent` (#6d2434) is a *surface* colour — buttons, the
 enter/backspace keys, the active-row outline. It is unreadable as text on the

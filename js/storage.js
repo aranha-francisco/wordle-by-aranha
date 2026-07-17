@@ -8,14 +8,21 @@ const emptyStats = () => ({
   distribution: new Array(ROWS).fill(0),
 });
 
-const defaults = () => ({ stats: emptyStats(), game: null });
+const defaultSettings = () => ({ theme: 'dark', accent: 'crimson' });
+
+const defaults = () => ({ stats: emptyStats(), game: null, settings: defaultSettings() });
 
 function read() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaults();
     const parsed = JSON.parse(raw);
-    return { ...defaults(), ...parsed, stats: { ...emptyStats(), ...(parsed.stats || {}) } };
+    return {
+      ...defaults(),
+      ...parsed,
+      stats: { ...emptyStats(), ...(parsed.stats || {}) },
+      settings: { ...defaultSettings(), ...(parsed.settings || {}) },
+    };
   } catch {
     return defaults();
   }
@@ -30,6 +37,16 @@ function write(data) {
 }
 
 export function loadStats() { return read().stats; }
+
+export function loadSettings() { return read().settings; }
+
+/** Merges a patch into the saved settings and returns the full result. */
+export function saveSettings(patch) {
+  const data = read();
+  data.settings = { ...data.settings, ...patch };
+  write(data);
+  return data.settings;
+}
 
 /** The in-progress game, so a reload doesn't lose the current board. */
 export function loadGame() { return read().game; }

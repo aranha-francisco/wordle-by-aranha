@@ -7,6 +7,22 @@
 <meta name="description" content="An unlimited five-letter word guessing game.">
 <meta name="theme-color" content="#121516">
 
+<!-- Applies the saved theme/accent before first paint. Without this the page
+     paints dark, then flips to light once js/main.js runs. Key must match
+     STORAGE_KEY in js/config.js. -->
+<script>
+(function () {
+  var theme = 'dark', accent = 'crimson';
+  try {
+    var s = (JSON.parse(localStorage.getItem('wordle.v2')) || {}).settings || {};
+    if (s.theme) theme = s.theme;
+    if (s.accent) accent = s.accent;
+  } catch (e) { /* first run, or storage blocked — defaults are fine */ }
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.accent = accent;
+})();
+</script>
+
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -20,8 +36,23 @@
 <body>
 <div class="app">
   <header class="header">
+    <button class="icon-btn icon-btn--hint" id="btn-hint" type="button" aria-label="Reveal a letter" title="Reveal a letter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="9" y1="18" x2="15" y2="18"/>
+        <line x1="10" y1="22" x2="14" y2="22"/>
+        <path d="M15.1 14a5 5 0 0 0 1.4-2.5 5.5 5.5 0 1 0-9 0A5 5 0 0 1 8.9 14"/>
+      </svg>
+    </button>
+
     <h1 class="title">WORDLE</h1>
     <p class="subtitle">by aranha</p>
+
+    <button class="icon-btn icon-btn--settings" id="btn-settings" type="button" aria-label="Settings" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
   </header>
 
   <main class="main">
@@ -45,6 +76,28 @@
     <div class="stats" id="modal-stats"></div>
     <div class="modal-actions">
       <button class="btn" id="btn-new" type="button">New game</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="settings-overlay" hidden>
+  <div class="modal modal--settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <button class="modal-close" id="btn-settings-close" type="button" aria-label="Close settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+
+    <h2 class="settings-title" id="settings-title">Settings</h2>
+
+    <div class="setting">
+      <span class="setting-label">Theme</span>
+      <div class="segmented" id="theme-toggle" role="group" aria-label="Theme"></div>
+    </div>
+
+    <div class="setting">
+      <span class="setting-label">Accent</span>
+      <div class="swatches" id="accent-swatches" role="group" aria-label="Accent colour"></div>
     </div>
   </div>
 </div>
