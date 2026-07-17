@@ -53,6 +53,7 @@ export class Game {
     this.status = 'playing'; // 'playing' | 'won' | 'lost'
     this.letterStates = {};
     this.statsRecorded = false; // guards against double-counting across reloads
+    this.revealedWord = null;   // answer shown after a skip; NOT a guess
   }
 
   get row() { return this.guesses.length; }
@@ -90,12 +91,38 @@ export class Game {
     return { ok: true, result, status: this.status };
   }
 
+  /**
+   * Give up: surface the answer in the next empty row and end the round as a loss.
+   *
+   * The revealed word is deliberately kept out of `guesses`/`results`. It was never
+   * guessed, so recording it would add an all-green row to the result pattern and
+   * make a skipped round read as a win.
+   *
+   * @returns {{ok: true, row: number, word: string, result: string[]} | {ok: false, reason: string}}
+   */
+  reveal() {
+    if (this.isOver) return { ok: false, reason: 'Game over' };
+
+    const row = this.guesses.length;
+    this.current = '';
+    this.revealedWord = this.answer;
+    this.status = 'lost';
+
+    return {
+      ok: true,
+      row,
+      word: this.answer,
+      result: new Array(COLS).fill(STATE.CORRECT),
+    };
+  }
+
   toJSON() {
     return {
       answer: this.answer,
       guesses: this.guesses,
       status: this.status,
       statsRecorded: this.statsRecorded,
+      revealedWord: this.revealedWord,
     };
   }
 
@@ -110,6 +137,11 @@ export class Game {
     }
     game.wordList = wordList;
     game.statsRecorded = Boolean(data.statsRecorded);
+    // restore a skipped round: replaying guesses can't reproduce this
+    if (data.revealedWord) {
+      game.revealedWord = data.revealedWord;
+      game.status = 'lost';
+    }
     return game;
   }
 }

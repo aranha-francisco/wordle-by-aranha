@@ -16,10 +16,14 @@ let locked = false; // true while a row is mid-flip, or while the intro plays
 const board = new Board(document.getElementById('board'));
 const keyboard = new Keyboard(document.getElementById('keyboard'), handleKey);
 const modal = new Modal({ onNewGame: startGame });
+const skipBtn = document.getElementById('btn-skip');
+
+skipBtn.addEventListener('click', skip);
 
 function render() {
   board.render(game);
   keyboard.render(game.letterStates);
+  skipBtn.disabled = game.isOver || locked;
 }
 
 /** Random word, but never the same one twice in a row. */
@@ -109,6 +113,24 @@ async function submit() {
 
   render();
   if (game.isOver) finish();
+}
+
+/** Give up: flip the answer into the next row, then end the round as a loss. */
+async function skip() {
+  if (locked || !game || game.isOver) return;
+
+  const outcome = game.reveal();
+  if (!outcome.ok) return;
+
+  saveGame(game);
+
+  locked = true;
+  render(); // disables the button for the duration of the flip
+  await board.revealRow(outcome.row, outcome.word, outcome.result);
+  locked = false;
+
+  render();
+  finish();
 }
 
 function finish() {

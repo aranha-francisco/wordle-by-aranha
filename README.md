@@ -112,6 +112,35 @@ The UI layer never mutates game state and `game.js` never touches the DOM;
 Streak is **consecutive wins** — every finished game counts, win or lose.
 `Game.statsRecorded` guards against a reload double-counting a finished board.
 
+**Skipping counts as a loss**: it resets the streak and increments `played`, but
+not the guess distribution. Skipping is giving up, and if it were free you could
+reroll until an easy word appeared and the streak would mean nothing. Change it
+in `skip()` in `main.js` if you'd rather it not count.
+
+## Skip / reveal
+
+`Game.reveal()` puts the answer in the next empty row and ends the round as a
+loss. The board flips it in with the normal stagger, then the modal opens.
+
+**The revealed word is deliberately kept out of `guesses`/`results`.** It was
+never guessed, so recording it would push an all-green row into the result
+pattern and make a skipped round read as a win. It lives in `game.revealedWord`
+instead, and `board.render()` paints that row from it — without that branch the
+row would blank out on the next render, since it isn't a guess.
+
+## Layout scaling
+
+Phones are width-constrained, so `--tile-size` is derived from `100vw`.
+Desktops are *height*-constrained — the column is ~5 tiles wide but 6 tall plus
+a keyboard — so above 480px everything scales off `vh` (`--tile-size`,
+`--key-h`, `--col-gap`, `--fs-title`) and `--max-width` grows with the tile.
+The header top-aligns with a `4.5vh` gap rather than floating mid-screen.
+
+Fixed 44px tiles in a 500px column left the app marooned in the middle of a
+large monitor. Measured fill after the change: ~87% of viewport height at
+1920x1002, 1600x900 and 1366x768; the clamp floors keep it from overflowing at
+1280x600 and below.
+
 ## Intro animation
 
 On load the wordmark sits optically centred in the viewport in `--accent-soft`,

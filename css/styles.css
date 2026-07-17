@@ -65,7 +65,9 @@
 
   --tile-size: 44px;
   --tile-gap: 5px;
+  --key-h: 52px;
   --max-width: 500px;
+  --col-gap: 18px;
 
   /* softer corners throughout */
   --r-tile: 8px;
@@ -118,7 +120,7 @@ button {
   flex-direction: column;
   align-items: center;      /* centers every row on the same axis */
   justify-content: center;  /* vertical centering when there is room */
-  gap: 18px;
+  gap: var(--col-gap);
   width: 100%;
   max-width: var(--max-width);
   margin: 0 auto;
@@ -129,7 +131,7 @@ button {
     calc(var(--safe-left) + 12px);
 }
 
-.header, .main, .keyboard { width: 100%; }
+.header, .main, .keyboard, .skip { width: 100%; }
 
 .header { text-align: center; position: relative; }
 
@@ -257,7 +259,8 @@ button {
 }
 
 .app[data-intro="playing"] .main,
-.app[data-intro="playing"] .keyboard {
+.app[data-intro="playing"] .keyboard,
+.app[data-intro="playing"] .skip {
   animation: intro-reveal 400ms ease 700ms both;
 }
 
@@ -301,7 +304,7 @@ button {
 .key {
   flex: 1 1 0;
   min-width: 0;
-  height: 52px;
+  height: var(--key-h);
   border-radius: var(--r-key);
   background: var(--key-bg);
   color: var(--text);
@@ -326,6 +329,37 @@ button {
 .key[data-state="absent"]:active { filter: brightness(2.6); }
 
 .key:active { transform: scale(0.94); filter: brightness(1.35); }
+
+/* ---------- skip ----------
+   Thin full-width bar under the keyboard. It takes its width from the same
+   centred column, so it lines up with the keyboard block for free. Styled
+   quietly on purpose: it ends the round, so it shouldn't compete with enter. */
+.skip {
+  height: clamp(32px, 4vh, 42px);
+  border-radius: var(--r-key);
+  background: transparent;
+  border: 1px solid var(--tile-empty-border);
+  color: var(--text-dim);
+  font-size: var(--fs-key);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  letter-spacing: 1.5px;
+  text-indent: 0.75px;
+  text-transform: uppercase;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease, transform 60ms ease;
+}
+
+.skip:active {
+  transform: scale(0.99);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.skip:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
 
 /* ---------- toast ---------- */
 .toast-wrap {
@@ -445,20 +479,42 @@ button {
 
 .btn:active { transform: scale(0.97); filter: brightness(1.25); }
 
-/* ---------- responsive ---------- */
-@media (max-width: 420px) {
+/* ---------- responsive ----------
+   Phones: width is the binding constraint, so the tile is derived from it.
+   Desktop: height is what runs out first (the column is only ~5 tiles wide but
+   ~6 tall plus a keyboard), so everything scales off vh and the column grows
+   with it. Fixed 44px tiles left the app marooned in the middle of a large
+   monitor; these clamps let it fill the viewport and stop at a sane ceiling. */
+@media (max-width: 480px) {
   :root {
-    --tile-size: min(56px, calc((100vw - 24px - 4 * 5px) / 5));
+    --tile-size: min(56px, calc((100vw - 24px - 4 * var(--tile-gap)) / 5));
     --fs-title: 26px;
+    --key-h: 46px;
   }
-  .key { height: 46px; }
 }
 
-@media (min-width: 421px) {
-  :root { --tile-size: 44px; }
+@media (min-width: 481px) {
+  :root {
+    --tile-gap: clamp(5px, 0.7vh, 8px);
+    /* vh drives it; the vw term only bites on short, narrow windows */
+    --tile-size: clamp(44px, min(7.4vh, 7.5vw), 88px);
+    --key-h: clamp(46px, 5.4vh, 66px);
+    /* keyboard is 10 keys wide, so the column must outrun the 5-tile board */
+    --max-width: clamp(500px, calc(var(--tile-size) * 8.2), 780px);
+    --col-gap: clamp(14px, 2.1vh, 28px);
+    --fs-title: clamp(30px, 4.2vh, 46px);
+    --fs-subtitle: clamp(12px, 1.4vh, 15px);
+  }
+
+  /* header near the top with a deliberate gap, rather than floating mid-screen */
+  .app {
+    justify-content: flex-start;
+    padding-top: calc(var(--safe-top) + clamp(20px, 4.5vh, 60px));
+  }
 }
 
+/* Short viewports (landscape phones, small laptops): reclaim vertical space. */
 @media (max-height: 620px) {
-  .app { justify-content: flex-start; gap: 12px; }
-  .key { height: 42px; }
+  :root { --col-gap: 12px; --key-h: 42px; }
+  .app { justify-content: flex-start; padding-top: calc(var(--safe-top) + 12px); }
 }

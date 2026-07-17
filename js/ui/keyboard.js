@@ -1,7 +1,8 @@
 const LAYOUT = [
   ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
   ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-  ['Enter', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'Backspace'],
+  // Enter sits on the right, matching a physical keyboard; backspace on the left.
+  ['Backspace', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'Enter'],
 ];
 
 const LABELS = { Enter: 'Enter', Backspace: 'Del' };

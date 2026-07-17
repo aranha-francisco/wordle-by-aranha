@@ -37,8 +37,16 @@ export class Board {
     for (let r = 0; r < ROWS; r++) {
       const { el, tiles } = this.rows[r];
       const isCurrent = r === game.row && !game.isOver;
-      const word = r < game.guesses.length ? game.guesses[r] : (isCurrent ? game.current : '');
-      const result = game.results[r];
+      // A skipped round's answer lives outside `guesses`, so paint it from
+      // revealedWord — otherwise this row would blank out on the next render.
+      const isRevealed = Boolean(game.revealedWord) && r === game.guesses.length;
+
+      let word = '';
+      if (r < game.guesses.length) word = game.guesses[r];
+      else if (isRevealed) word = game.revealedWord;
+      else if (isCurrent) word = game.current;
+
+      const result = game.results[r] || (isRevealed ? new Array(COLS).fill('correct') : null);
 
       el.dataset.active = String(isCurrent);
 
