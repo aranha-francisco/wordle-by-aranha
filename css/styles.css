@@ -338,8 +338,9 @@ button {
   height: clamp(32px, 4vh, 42px);
   border-radius: var(--r-key);
   background: transparent;
-  border: 1px solid var(--tile-empty-border);
-  color: var(--text-dim);
+  /* same token as the current row's tile outline, so the two stay in step */
+  border: 1px solid var(--tile-active-border);
+  color: var(--tile-active-border);
   font-size: var(--fs-key);
   font-weight: var(--fw-medium);
   line-height: 1;
