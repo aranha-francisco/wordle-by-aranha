@@ -236,8 +236,15 @@ Each accent carries three values, because one hex can't do all three jobs:
 | `--accent-soft` | accent-coloured *text* on `--bg`; the raw accent is ~1.7:1 there, so this is the same hue lifted past 4.5:1 |
 | `--accent-text` | text *on* `--accent` (enter key, new-game button) |
 
-The five accents are the shipped crimson `hsl(347, 50%, 28%)` plus four hues at
-the **same lightness and saturation**, so none reads brighter than the rest.
+The accents are the shipped crimson `hsl(347, 50%, 28%)`, with slate, teal and
+charcoal at the **same lightness and saturation** on other hues, so none reads
+brighter than the rest.
+
+**Rose is a deliberate exception.** Red carries far less luminance than green, so
+a rose at `L=28%` would have read as a second dark wine next to crimson. It sits
+at `L=44%` instead, which lands its measured brightness at 0.1223 against teal's
+0.1218 — matched by eye rather than by HSL. If you add accents, match *perceived*
+brightness, not the L number.
 Light theme overrides `--accent-soft` back to `var(--accent)` — the lifted tint
 is built for a dark background and vanishes on beige. That override must stay
 **after** the `[data-accent]` blocks to win the cascade.
@@ -283,6 +290,16 @@ only to measure `--intro-shift`, the gap between the header's resting position
 and the viewport centre. CSS can't express that — it depends on the laid-out
 height of the board and keyboard. Measuring keeps the whole thing
 transform/opacity only, so the resting layout never moves and nothing reflows.
+
+The header icons are **not** part of the title card — they're app furniture, so
+they're held at opacity 0 and come up with the board rather than riding the
+wordmark in from the centre.
+
+`INTRO_MS` must be **>= the longest animation in the CSS intro block** (currently
+`intro-reveal` at 700ms delay + 400ms = 1100ms). Teardown removes `data-intro`,
+so anything still mid-flight snaps to its resting state — at 900ms the board was
+caught at opacity 0.8 and popped the last 20%. `test/build.test.js` parses the
+stylesheet and fails if the two drift.
 
 **Input is locked for the whole boot, starting before the `document.fonts.ready`
 await** — not just during the animation. That await is a real window in which the

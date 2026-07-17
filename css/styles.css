@@ -59,9 +59,10 @@
 }
 
 /* ---------- accents ----------
-   The shipped crimson is hsl(347, 50%, 28%). The other four are the same
-   lightness and saturation at different hues, so they read as one family and
-   none of them jumps out as brighter than the rest.
+   The shipped crimson is hsl(347, 50%, 28%). Slate, teal and charcoal share that
+   lightness and saturation at other hues, so they read as one family and none
+   jumps out as brighter than the rest. Rose is the deliberate exception — see
+   its block for why matching the HSL there would have failed.
 
    Each accent carries three values, because one hex can't do all three jobs:
      --accent       surface colour  (keys, buttons, the active-row outline)
@@ -87,10 +88,14 @@
   --accent-text: #ddf4f0;
 }
 
-:root[data-accent="amber"] {
-  --accent: #6d5024;       /* hsl(36, 50%, 28%) */
-  --accent-soft: #c99f5e;
-  --accent-text: #f4eadd;
+/* The one that breaks the L=28% rule, on purpose. Red carries far less
+   luminance than green, so a rose at L=28% would read as another dark wine next
+   to crimson. This is lifted to L=44% instead, which puts its measured
+   brightness at 0.1223 against teal's 0.1218 — matched by eye, not by HSL. */
+:root[data-accent="rose"] {
+  --accent: #a33e68;       /* hsl(335, 45%, 44%) */
+  --accent-soft: #c25f88;
+  --accent-text: #f0d7e1;
 }
 
 :root[data-accent="charcoal"] {
@@ -427,10 +432,14 @@ button {
   animation: intro-bar 900ms ease both;
 }
 
+/* The icon buttons live inside .header, so they'd otherwise ride the wordmark up
+   from the centre and be on screen from the first frame. They belong to the app
+   furniture, not the title card, so they come up with everything else. */
 .app[data-intro="playing"] .main,
 .app[data-intro="playing"] .keyboard,
 .app[data-intro="playing"] .skip,
-.app[data-intro="playing"] .footer {
+.app[data-intro="playing"] .footer,
+.app[data-intro="playing"] .icon-btn {
   animation: intro-reveal 400ms ease 700ms both;
 }
 
@@ -796,7 +805,7 @@ button {
 .swatch[data-accent="crimson"]  { --swatch: #6d2434; }
 .swatch[data-accent="slate"]    { --swatch: #24466d; }
 .swatch[data-accent="teal"]     { --swatch: #246d61; }
-.swatch[data-accent="amber"]    { --swatch: #6d5024; }
+.swatch[data-accent="rose"]     { --swatch: #a33e68; }
 .swatch[data-accent="charcoal"] { --swatch: #4d4a44; }
 
 .btn {

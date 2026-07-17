@@ -5,6 +5,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expectedServiceWorker, parseServiceWorker } from '../tools/assets.js';
 import { STORAGE_KEY, FLIP_MS, FLIP_STAGGER_MS } from '../js/config.js';
+import { ACCENTS, THEMES, CONTRASTS } from '../js/settings.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(root, p), 'utf8');
@@ -67,26 +68,74 @@ test('flip timings in config.js match the stylesheet', () => {
     `--flip-stagger-ms must be ${FLIP_STAGGER_MS}ms`);
 });
 
+/* Derived from settings.js, not hardcoded: the accent list has exactly one
+   source, and renaming one there can't quietly leave the CSS behind. */
+
 test('every accent defines all three of its tokens', () => {
   // One hex can't do all three jobs: surface, text-on-background, text-on-accent.
   const css = read('css/styles.css');
-  for (const accent of ['crimson', 'slate', 'teal', 'amber', 'charcoal']) {
-    const block = css.match(new RegExp(`\\[data-accent="${accent}"\\]\\s*\\{([^}]*)\\}`))?.[1];
-    assert.ok(block, `missing [data-accent="${accent}"] block`);
+  for (const { id } of ACCENTS) {
+    const block = css.match(new RegExp(`\\[data-accent="${id}"\\]\\s*\\{([^}]*)\\}`))?.[1];
+    assert.ok(block, `missing [data-accent="${id}"] block`);
     for (const token of ['--accent:', '--accent-soft:', '--accent-text:']) {
-      assert.ok(block.includes(token), `${accent} is missing ${token}`);
+      assert.ok(block.includes(token), `${id} is missing ${token}`);
     }
   }
 });
 
 test('every accent has a matching swatch colour', () => {
   const css = read('css/styles.css');
-  for (const accent of ['crimson', 'slate', 'teal', 'amber', 'charcoal']) {
+  for (const { id } of ACCENTS) {
     assert.ok(
-      css.includes(`.swatch[data-accent="${accent}"]`),
-      `no swatch colour for ${accent} — its settings chip would render empty`
+      css.includes(`.swatch[data-accent="${id}"]`),
+      `no swatch colour for ${id} — its settings chip would render empty`
     );
   }
+});
+
+test('no orphaned accent blocks left in the CSS', () => {
+  // Catches the other direction: a renamed accent leaving its old block behind.
+  const css = read('css/styles.css');
+  const ids = new Set(ACCENTS.map((a) => a.id));
+  for (const m of css.matchAll(/\.swatch\[data-accent="([^"]+)"\]/g)) {
+    assert.ok(ids.has(m[1]), `.swatch for "${m[1]}" has no entry in settings.js ACCENTS`);
+  }
+});
+
+test('every theme and contrast option has a CSS block', () => {
+  const css = read('css/styles.css');
+  for (const { id } of THEMES) {
+    assert.ok(css.includes(`[data-theme="${id}"]`), `no [data-theme="${id}"] block`);
+  }
+  // 'normal' is the baseline and intentionally has no override block.
+  for (const { id } of CONTRASTS.filter((c) => c.id !== 'normal')) {
+    assert.ok(css.includes(`[data-contrast="${id}"]`), `no [data-contrast="${id}"] block`);
+  }
+});
+
+test('the intro teardown outlasts every intro animation', () => {
+  // data-intro is removed at INTRO_MS; anything still running snaps to its
+  // resting state. This caught the board popping the last 20% of its fade.
+  const css = read('css/styles.css');
+  const intro = read('js/ui/intro.js');
+  const introMs = Number(intro.match(/const INTRO_MS = (\d+)/)[1]);
+
+  const block = css.slice(css.indexOf('---------- intro ----------'));
+
+  // In the animation shorthand the first time value is the duration and the
+  // second, if present, is the delay: `intro-reveal 400ms ease 700ms both`.
+  let longest = 0;
+  const seen = [];
+  for (const m of block.matchAll(/animation:\s*(intro-[\w-]+)([^;]*);/g)) {
+    const times = [...m[2].matchAll(/(\d+)ms/g)].map((t) => Number(t[1]));
+    const total = (times[0] || 0) + (times[1] || 0);
+    seen.push(`${m[1]}=${total}ms`);
+    longest = Math.max(longest, total);
+  }
+
+  assert.ok(seen.length >= 4, `expected to find the intro animations, saw: ${seen.join(', ')}`);
+  assert.ok(introMs >= longest,
+    `INTRO_MS (${introMs}) must be >= the longest intro animation (${longest}ms), or it snaps mid-flight. Saw: ${seen.join(', ')}`);
 });
 
 test('the dead share module is really gone', () => {

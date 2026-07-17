@@ -1,6 +1,8 @@
-// Total intro runtime; must cover the longest animation in the CSS intro block
-// (.header::after: 900ms duration + 0ms delay).
-const INTRO_MS = 900;
+// Total intro runtime. Must cover the LONGEST animation in the CSS intro block,
+// which is intro-reveal: 700ms delay + 400ms duration. Teardown removes
+// data-intro, so anything still mid-flight snaps to its resting state — at 900ms
+// the board was caught at opacity .8 and popped the last 20%.
+const INTRO_MS = 1100;
 
 const prefersReducedMotion = () =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
