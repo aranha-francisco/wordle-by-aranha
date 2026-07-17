@@ -13,12 +13,18 @@ const wordList = defaultWordList;
 
 let game;
 let stats = loadStats();
-let locked = false; // true while a row is mid-flip, or while the intro plays
+let locked = false;        // true while a row is mid-flip, or while the intro plays
+let skipMode = 'skip';     // 'skip' while playing; 'new' once the result is dismissed
 
 const board = new Board(document.getElementById('board'));
 const keyboard = new Keyboard(document.getElementById('keyboard'), handleKey);
-const modal = new Modal({ onNewGame: startGame });
-const settingsModal = new SettingsModal();
+const modal = new Modal({ onNewGame: startGame, onClose: handleResultClosed });
+const settingsModal = new SettingsModal({
+  onChange: (settings) => { if (game) game.hardMode = settings.hardMode; },
+  // Flipping hard mode mid-round would change the rules of a game already
+  // underway, so the control waits for the next one.
+  isHardModeLocked: () => Boolean(game) && !game.isOver && game.guesses.length > 0,
+});
 const skipBtn = document.getElementById('btn-skip');
 const hintBtn = document.getElementById('btn-hint');
 const settingsBtn = document.getElementById('btn-settings');
@@ -27,17 +33,49 @@ const settingsBtn = document.getElementById('btn-settings');
 // keeps the meta theme-color in step and covers a blocked-storage first run.
 applySettings(getSettings());
 
-skipBtn.addEventListener('click', skip);
+skipBtn.addEventListener('click', () => (skipBtn.dataset.mode === 'new' ? startGame() : skip()));
 hintBtn.addEventListener('click', hint);
 settingsBtn.addEventListener('click', () => {
   pulseIcon(settingsBtn);
   settingsModal.show();
 });
 
+/**
+ * The skip bar doubles as the way out of a finished round: once the result modal
+ * is dismissed there'd otherwise be no route to a new game short of a reload.
+ *
+ * Driven by the modal closing rather than by game.isOver. The round is already
+ * over while the final row is still flipping and while the modal covers the
+ * board, so keying off isOver would swap the label early — behind the scrim,
+ * where the morph can't be seen and has nothing left to animate by the time it
+ * matters.
+ *
+ * @param {'skip'|'new'} mode
+ */
+function setSkipMode(mode, animate = false) {
+  const changed = skipMode !== mode;
+  skipMode = mode;
+
+  // Written every call, not just on change: render() re-asserts the current mode,
+  // and skipping the write would let the DOM keep a stale label.
+  skipBtn.dataset.mode = mode;
+  skipBtn.textContent = mode === 'new' ? 'New game' : 'Skip';
+  if (changed && animate) pulse(skipBtn, SKIP_MORPH_MS, 'morph');
+
+  // Still "Skip" on a finished board: the round ended while the modal was up, so
+  // there's nothing left to skip until it's been dismissed.
+  skipBtn.disabled = locked || (mode === 'skip' && game.isOver);
+}
+
+/** Result modal dismissed: the board is on show, so offer the way forward. */
+function handleResultClosed() {
+  if (game?.isOver) setSkipMode('new', true);
+}
+
 function render() {
   board.render(game);
   keyboard.render(game.letterStates);
-  skipBtn.disabled = game.isOver || locked;
+  setSkipMode(skipMode);
   hintBtn.disabled = game.isOver || locked;
 }
 
@@ -51,8 +89,12 @@ function nextAnswer() {
 
 function startGame() {
   game = new Game({ answer: nextAnswer(), wordList });
+  game.hardMode = getSettings().hardMode;
   locked = false;
+  skipMode = 'skip';
   saveGame(game);
+  // hide() before render(): hiding fires onClose, which would otherwise flip the
+  // fresh round's button straight back to "New game".
   modal.hide();
   render();
 }
@@ -63,6 +105,7 @@ function restoreOrStart() {
   if (!saved) return startGame();
 
   game = Game.fromJSON(saved, wordList);
+  game.hardMode = getSettings().hardMode;
   modal.hide();
   render();
 }
@@ -131,13 +174,14 @@ async function submit() {
 }
 
 const SKIP_PULSE_MS = 280; // must match skip-pulse in styles.css
+const SKIP_MORPH_MS = 340; // must match skip-morph
 const ICON_PULSE_MS = 320; // must match icon-press / icon-fill / icon-tint
 
 /** Restart-safe press animation; the element may be disabled mid-play. */
-function pulse(el, ms) {
+function pulse(el, ms, name = 'pulse') {
   el.dataset.anim = '';
   void el.offsetWidth; // force reflow so the animation restarts
-  el.dataset.anim = 'pulse';
+  el.dataset.anim = name;
   setTimeout(() => { el.dataset.anim = ''; }, ms);
 }
 
@@ -149,11 +193,15 @@ function hint() {
   pulseIcon(hintBtn);
   if (locked || !game || game.isOver) return;
 
+  const wasAssisted = game.assisted;
   const outcome = game.hint();
   if (!outcome.ok) {
     toast(outcome.reason);
     return;
   }
+
+  // Say the price out loud the first time, rather than silently killing a streak.
+  if (!wasAssisted) toast("Hint used — streak won't count", 1600);
 
   saveGame(game);
   render();
@@ -183,7 +231,7 @@ function finish() {
   const won = game.status === 'won';
 
   if (!game.statsRecorded) {
-    stats = recordResult({ won, guessCount: game.guesses.length });
+    stats = recordResult({ won, guessCount: game.guesses.length, assisted: game.assisted });
     game.statsRecorded = true;
     saveGame(game);
   }

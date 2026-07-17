@@ -10,9 +10,3 @@ export const FLIP_STAGGER_MS = 100;
 export const STORAGE_KEY = 'wordle.v2';
 
 export const STATE = { CORRECT: 'correct', PRESENT: 'present', ABSENT: 'absent' };
-
-export const EMOJI = {
-  [STATE.CORRECT]: '\u{1F7E9}',
-  [STATE.PRESENT]: '\u{1F7E8}',
-  [STATE.ABSENT]: '\u{2B1B}',
-};

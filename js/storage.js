@@ -8,7 +8,12 @@ const emptyStats = () => ({
   distribution: new Array(ROWS).fill(0),
 });
 
-const defaultSettings = () => ({ theme: 'dark', accent: 'crimson' });
+const defaultSettings = () => ({
+  theme: 'dark',
+  accent: 'crimson',
+  contrast: 'normal', // 'normal' | 'high' — orange/blue tiles for colourblind players
+  hardMode: false,
+});
 
 const defaults = () => ({ stats: emptyStats(), game: null, settings: defaultSettings() });
 
@@ -63,14 +68,28 @@ export function clearGame() {
   write(data);
 }
 
-/** Records a finished game. Streak is consecutive wins — every game counts. */
-export function recordResult({ won, guessCount }) {
+/**
+ * Records a finished game.
+ *
+ * Streak is consecutive *unaided* wins. A hint ends the streak exactly like a
+ * loss does, which is the whole cost of a hint — otherwise you could hint your
+ * way out of every hard word and the streak would never break, making it
+ * meaningless. Assisted rounds still count in played/wins so the win rate stays
+ * honest; they're only kept out of the distribution, so that histogram keeps
+ * meaning "solved unaided in N guesses".
+ *
+ * The distribution is recorded but deliberately not surfaced anywhere yet — it
+ * accrues history so a future stats screen has something to show. Stats can't be
+ * backfilled, so dropping the write would cost real data.
+ */
+export function recordResult({ won, guessCount, assisted = false }) {
   const data = read();
   const stats = data.stats;
 
   stats.played += 1;
-  if (won) {
-    stats.wins += 1;
+  if (won) stats.wins += 1;
+
+  if (won && !assisted) {
     stats.distribution[guessCount - 1] += 1;
     stats.currentStreak += 1;
     stats.maxStreak = Math.max(stats.maxStreak, stats.currentStreak);

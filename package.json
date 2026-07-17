@@ -1,0 +1,15 @@
+{
+  "name": "wordle-by-aranha",
+  "version": "1.0.0",
+  "private": true,
+  "description": "An unlimited five-letter word guessing game. Installable PWA, vanilla JS, no backend.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "build:sw": "node tools/build-sw.js",
+    "serve": "python serve.py 5500"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -160,6 +160,19 @@
   --accent-soft: var(--accent);
 }
 
+/* ---------- high contrast ----------
+   Green vs yellow is the one pairing red-green colourblindness can't separate,
+   and it was the only channel carrying game state. Orange/blue differ in hue AND
+   lightness, so they survive any colour vision. Applies over both themes, so it
+   must come after both. Tile text stays a lighter tint of its own tile, per the
+   rule the normal palette follows. */
+:root[data-contrast="high"] {
+  --correct: #f5793a;
+  --correct-text: #fdeade;
+  --present: #85c0f9;
+  --present-text: #e6f2fe;
+}
+
 /* ---------- base ---------- */
 * { box-sizing: border-box; }
 
@@ -514,7 +527,24 @@ button {
   letter-spacing: 1.5px;
   text-indent: 0.75px;
   text-transform: uppercase;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease, transform 60ms ease;
+  /* slow enough that the fill reads as a morph when it becomes "New game" */
+  transition: background 240ms ease, color 240ms ease, border-color 240ms ease, transform 60ms ease;
+}
+
+/* Closing the result modal turns this bar into the way out of a finished round,
+   so it fills in rather than staying a quiet outline. */
+.skip[data-mode="new"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.skip[data-anim="morph"] { animation: skip-morph 340ms cubic-bezier(0.34, 1.4, 0.64, 1); }
+
+@keyframes skip-morph {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.035); }
+  100% { transform: scale(1); }
 }
 
 .skip:active {
@@ -625,6 +655,16 @@ button {
   color: var(--text-dim);
 }
 
+/* Why a won round didn't move the streak. */
+.modal-note {
+  margin: -6px 0 0;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--accent-soft);
+}
+
 .modal-word {
   margin: 2px 0 0;
   font-size: var(--fs-modal-word);
@@ -709,7 +749,16 @@ button {
   color: var(--text-dim);
 }
 
+.setting-note {
+  margin: 0;
+  font-size: 11px;
+  font-weight: var(--fw-regular);
+  line-height: 1.35;
+  color: var(--text-dim);
+}
+
 .segmented { display: flex; gap: 8px; }
+.segmented[data-locked="true"] { opacity: 0.45; }
 
 .segmented button {
   flex: 1;
@@ -789,6 +838,10 @@ button {
     --col-gap: clamp(14px, 2.1vh, 28px);
     --fs-title: clamp(30px, 4.2vh, 46px);
     --fs-subtitle: clamp(12px, 1.4vh, 15px);
+    /* Keys grow with the viewport but the letters were pinned at 13px, so a 66px
+       desktop key carried phone-sized type. The icon keys are sized in em, so
+       they scale from this too and stay weight-matched to the letters. */
+    --fs-key: clamp(13px, 1.7vh, 18px);
   }
 
   /* header near the top with a deliberate gap, rather than floating mid-screen */

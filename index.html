@@ -12,14 +12,16 @@
      STORAGE_KEY in js/config.js. -->
 <script>
 (function () {
-  var theme = 'dark', accent = 'crimson';
+  var theme = 'dark', accent = 'crimson', contrast = 'normal';
   try {
     var s = (JSON.parse(localStorage.getItem('wordle.v2')) || {}).settings || {};
     if (s.theme) theme = s.theme;
     if (s.accent) accent = s.accent;
+    if (s.contrast) contrast = s.contrast;
   } catch (e) { /* first run, or storage blocked — defaults are fine */ }
   document.documentElement.dataset.theme = theme;
   document.documentElement.dataset.accent = accent;
+  document.documentElement.dataset.contrast = contrast;
 })();
 </script>
 
@@ -70,8 +72,14 @@
 
 <div class="overlay" id="overlay" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-word">
+    <button class="modal-close" id="btn-modal-close" type="button" aria-label="Close and review the board">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
     <p class="modal-eyebrow" id="modal-eyebrow"></p>
     <h2 class="modal-word" id="modal-word"></h2>
+    <p class="modal-note" id="modal-note" hidden></p>
     <div class="pattern" id="modal-pattern" aria-hidden="true"></div>
     <div class="stats" id="modal-stats"></div>
     <div class="modal-actions">
@@ -98,6 +106,18 @@
     <div class="setting">
       <span class="setting-label">Accent</span>
       <div class="swatches" id="accent-swatches" role="group" aria-label="Accent colour"></div>
+    </div>
+
+    <div class="setting">
+      <span class="setting-label">Contrast</span>
+      <div class="segmented" id="contrast-toggle" role="group" aria-label="Contrast"></div>
+      <p class="setting-note">Orange and blue tiles instead of green and yellow</p>
+    </div>
+
+    <div class="setting">
+      <span class="setting-label">Hard mode</span>
+      <div class="segmented" id="hard-toggle" role="group" aria-label="Hard mode"></div>
+      <p class="setting-note" id="hard-note"></p>
     </div>
   </div>
 </div>

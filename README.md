@@ -81,46 +81,106 @@ offset is −0.19px. A full-tracking indent overshoots the other way.
 ## Layout
 
 ```
-index.html          markup shell
+index.html          markup shell (incl. the pre-paint theme script)
 serve.py            no-cache dev server
+package.json        test + build:sw scripts. Nothing here ships to the browser.
 css/styles.css      all styling; design tokens are the :root custom properties
 fonts/              bundled Rubik + its OFL licence
 js/
-  config.js         board size, animation timings, storage key, emoji map
+  config.js         board size, animation timings, storage key
   words.js          createWordList() factory over the bundled data
   data/words-data.js  generated word lists
   game.js           pure game state — evaluate(), Game class. No DOM.
-  storage.js        localStorage read/write, stats, saved board
-  share.js          emoji grid text + clipboard (see note below)
+  storage.js        localStorage read/write, stats, settings, saved board
+  settings.js       theme/accent/contrast/hard-mode state. Ids only, no colours.
   main.js           wiring: input → game → UI
   ui/
     board.js        tile grid, flip reveal
     keyboard.js     on-screen keyboard
     modal.js        win/lose overlay
+    settings-modal.js
+    focus-trap.js   keeps Tab inside a dialog
     toast.js        transient messages
     intro.js        opening reveal (measures the header's travel)
+test/               node --test suite (see below)
+tools/              service-worker generator
 manifest.json
-sw.js               cache-first service worker
+sw.js               cache-first service worker — GENERATED, see Caching
 icons/
 ```
 
 The UI layer never mutates game state and `game.js` never touches the DOM;
-`main.js` is the only place the two meet.
+`main.js` is the only place the two meet. That split is what makes the whole
+game layer testable in Node with no browser and no jsdom.
 
-## Stats
+## Tests
 
-Streak is **consecutive wins** — every finished game counts, win or lose.
-`Game.statsRecorded` guards against a reload double-counting a finished board.
+```
+npm test
+```
 
-**Skipping counts as a loss**: it resets the streak and increments `played`, but
-not the guess distribution. Skipping is giving up, and if it were free you could
-reroll until an easy word appeared and the streak would mean nothing. Change it
-in `skip()` in `main.js` if you'd rather it not count.
+51 tests, no dependencies — Node's built-in runner over the pure modules.
+`storage.js` reads `localStorage` lazily inside each function, so a ~10-line
+in-memory stub is enough to test it.
 
-## Skip / reveal
+The suite leans on `evaluate()`'s duplicate-letter rules, which are the classic
+Wordle bug and the reason it makes two passes instead of one, and on the streak
+rules below.
+
+`test/build.test.js` guards the couplings that **fail silently** — the ones that
+keep working on your machine and break for someone else, later:
+
+| guard | what it catches |
+|---|---|
+| sw.js asset list | a new module that never got precached; offline breaks only once someone's on a plane |
+| sw.js cache name | an edited asset without a cache bump; installed copies keep serving the old build |
+| storage key | `index.html`'s pre-paint script can't import `STORAGE_KEY`; change one and the theme silently flashes again |
+| flip timings | `config.js` and the stylesheet drifting, so the colour lands before or after the tile turns edge-on |
+| accent tokens | an accent missing one of its three values, or a swatch with no colour |
+
+Each one has been checked by deliberately breaking it and watching it fail.
+
+## Stats and the cost of a hint
+
+Streak is **consecutive unaided wins**. `Game.statsRecorded` guards against a
+reload double-counting a finished board.
+
+| outcome | played | wins | streak | distribution |
+|---|---|---|---|---|
+| unaided win | +1 | +1 | +1 | +1 |
+| assisted win (any hint used) | +1 | +1 | **reset** | — |
+| loss | +1 | — | reset | — |
+| skip (giving up) | +1 | — | reset | — |
+
+**A hint ends the streak exactly like a loss.** That's the entire price of a
+hint, and without it the whole thing is theatre: you could hint your way past
+every hard word and the streak would never break. Assisted rounds still count in
+played/wins so the win rate stays honest — they're only kept out of the
+distribution, so that histogram keeps meaning "solved unaided in N".
+
+The UI says this out loud rather than quietly resetting: the first hint of a
+round toasts "streak won't count", and the result modal carries a "hint used —
+streak reset" note.
+
+**The distribution is recorded but deliberately not shown anywhere.** It accrues
+history so a future stats screen has something to show; stats can't be
+backfilled, so dropping the write would cost real data.
+
+## Skip / reveal, and the way out of a finished round
 
 `Game.reveal()` puts the answer in the next empty row and ends the round as a
 loss. The board flips it in with the normal stagger, then the modal opens.
+
+The result modal **is** dismissible (X, backdrop, Escape) so the finished board
+can be reviewed. Closing it isn't a dead end: the skip bar morphs into "New
+game", filling with the accent, so there's always a route to the next round
+without a reload.
+
+That morph is driven by **the modal closing**, not by `game.isOver`. The round is
+already over while the last row is still flipping and while the modal covers the
+board, so keying off `isOver` swaps the label early — behind the scrim, where the
+animation can't be seen and has nothing left to play by the time it matters.
+`skipMode` in `main.js` tracks this; `startGame()` resets it.
 
 **The revealed word is deliberately kept out of `guesses`/`results`.** It was
 never guessed, so recording it would push an all-green row into the result
@@ -142,7 +202,21 @@ row until that position is guessed. It is stored as `game.hints` (a Set of
 positions) and persists across reloads. `board.revealRow()` clears the ghost
 attribute, since a skip reveal can land on a hinted slot.
 
-Hints are unlimited and don't affect stats.
+Hints are unlimited, but they are not free — the first one marks the round
+`assisted`, which costs the streak. See the table above.
+
+## Hard mode
+
+Off by default. When on, every clue already earned must be honoured: correct
+letters stay in place, present letters must reappear. `Game.hardModeViolation()`
+returns a specific reason ("3rd letter must be O") rather than a generic refusal.
+
+Enforcement covers clues from *guesses*, not lightbulb hints — that's the classic
+rule, and making a hint also constrain later guesses would punish it twice.
+
+The toggle **locks mid-round**, because flipping it would change the rules of a
+game already underway. `main.js` supplies `isHardModeLocked` to the settings
+modal, which disables the control and swaps the note.
 
 ## Settings
 
@@ -171,10 +245,18 @@ is built for a dark background and vanishes on beige. That override must stay
 Light mode is warm beige (`#efe7d8`), not white. Absent still recedes — darker
 than the keys, just inverted relative to dark mode.
 
+**High contrast** (`[data-contrast="high"]`) swaps the tiles to orange/blue.
+Green vs yellow is the one pairing red-green colourblindness can't separate, and
+colour was the only channel carrying game state. Orange and blue differ in hue
+*and* lightness, so they survive any colour vision. It layers over both themes,
+so the block must come after both.
+
 **The inline script in `index.html` is load-bearing.** It applies the saved
-theme/accent before first paint; without it the page paints dark and flips to
-light once the module runs. Its storage key must match `STORAGE_KEY` in
-`config.js`.
+theme/accent/contrast before first paint; without it the page paints dark and
+flips once the module runs. It can't import `STORAGE_KEY` (it runs before any
+module), so `test/build.test.js` asserts the key and every themed attribute
+instead — that test is the only thing standing between a renamed key and a
+silently returning flash.
 
 ## Layout scaling
 
@@ -210,15 +292,10 @@ first `await`.
 
 ## Notes
 
-**`share.js` is currently unwired.** The share button was removed from the
-modal, but the module (and `EMOJI` in `config.js`) is kept intact because a
-shareable emoji grid is a planned feature — re-adding a button that calls
-`buildShareText(game)` + `copyText(...)` is all it takes. Delete both if the
-feature is off the table for good.
-
 **Animation timings are duplicated** — `FLIP_MS` / `FLIP_STAGGER_MS` in
 `config.js` must stay in sync with `--flip-ms` / `--flip-stagger-ms` in
 `styles.css`. JS drives the mid-rotation colour swap, CSS drives the rotation.
+`test/build.test.js` fails if they drift.
 
 ## Extension points
 
@@ -247,6 +324,25 @@ bump since they start near-black.
 
 ## Caching
 
-`sw.js` is cache-first over an explicit asset list. **Bump `CACHE` whenever you
-change any asset**, or clients keep serving the old build. Install uses
-`Request(url, { cache: 'reload' })` so it can never precache a stale copy.
+`sw.js` is cache-first over an explicit asset list. **The `CACHE` name and
+`ASSETS` array are generated — don't hand-edit them:**
+
+```
+npm run build:sw
+```
+
+`tools/build-sw.js` walks the filesystem for the asset list and names the cache
+after a hash of those assets' contents. That kills two hand-maintenance bugs at
+once: you can't forget to list a new module, and you can't forget to bump the
+version, because the version *is* the content. `npm test` fails if `sw.js` has
+drifted from the filesystem.
+
+This replaced twelve manual `wordle-vN` bumps. A hand-kept list is a bad trade:
+it breaks offline *silently*, so nobody notices until they're on a plane.
+
+Install uses `Request(url, { cache: 'reload' })` so it can never precache a stale
+copy through the HTTP cache.
+
+Write `sw.js` with a BOM-free encoding. PowerShell's `Set-Content -Encoding utf8`
+prepends one, and a BOM atop a service worker is a great way to lose an
+afternoon — there's a test for that too.

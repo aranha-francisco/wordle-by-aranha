@@ -55,6 +55,8 @@ export class Game {
     this.statsRecorded = false; // guards against double-counting across reloads
     this.revealedWord = null;   // answer shown after a skip; NOT a guess
     this.hints = new Set();     // positions revealed by the hint button
+    this.assisted = false;      // true once any hint is used; the round no longer counts as clean
+    this.hardMode = false;      // set from settings by the caller; checked at submit time
   }
 
   /** Positions the player has already pinned down with a correct letter. */
@@ -83,11 +85,40 @@ export class Game {
     return true;
   }
 
+  /**
+   * Hard mode: every clue already earned must be honoured. Correct letters must
+   * stay in place; present letters must appear somewhere. Returns a specific
+   * reason ("3rd letter must be O") or null when the guess is legal.
+   */
+  hardModeViolation(word) {
+    const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th'];
+    for (let g = 0; g < this.guesses.length; g++) {
+      const guess = this.guesses[g];
+      const result = this.results[g];
+      for (let i = 0; i < COLS; i++) {
+        if (result[i] === STATE.CORRECT && word[i] !== guess[i]) {
+          return `${ORDINALS[i] || `${i + 1}th`} letter must be ${guess[i].toUpperCase()}`;
+        }
+      }
+      for (let i = 0; i < COLS; i++) {
+        if (result[i] === STATE.PRESENT && !word.includes(guess[i])) {
+          return `Guess must contain ${guess[i].toUpperCase()}`;
+        }
+      }
+    }
+    return null;
+  }
+
   /** @returns {{ok: true, result: string[], status: string} | {ok: false, reason: string}} */
   submit() {
     if (this.isOver) return { ok: false, reason: 'Game over' };
     if (this.current.length < COLS) return { ok: false, reason: 'Not enough letters' };
     if (!this.wordList.isAllowed(this.current)) return { ok: false, reason: 'Not in word list' };
+
+    if (this.hardMode) {
+      const violation = this.hardModeViolation(this.current);
+      if (violation) return { ok: false, reason: violation };
+    }
 
     const guess = this.current;
     const result = evaluate(guess, this.answer);
@@ -124,6 +155,7 @@ export class Game {
 
     const position = candidates[Math.floor(Math.random() * candidates.length)];
     this.hints.add(position);
+    this.assisted = true; // this round no longer counts toward the streak
     return { ok: true, position, letter: this.answer[position] };
   }
 
@@ -160,6 +192,7 @@ export class Game {
       statsRecorded: this.statsRecorded,
       revealedWord: this.revealedWord,
       hints: [...this.hints],
+      assisted: this.assisted,
     };
   }
 
@@ -175,6 +208,7 @@ export class Game {
     game.wordList = wordList;
     game.statsRecorded = Boolean(data.statsRecorded);
     game.hints = new Set(data.hints || []);
+    game.assisted = Boolean(data.assisted) || game.hints.size > 0;
     // restore a skipped round: replaying guesses can't reproduce this
     if (data.revealedWord) {
       game.revealedWord = data.revealedWord;

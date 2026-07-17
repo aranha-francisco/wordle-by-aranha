@@ -1,30 +1,32 @@
-// Bump CACHE when any asset below changes so clients pick up the new build.
-const CACHE = 'wordle-v12';
+// CACHE and ASSETS below are GENERATED — run `npm run build:sw` after changing
+// any shipped file. The cache name is a hash of the assets' contents, so it can't
+// go stale; test/build.test.js fails if this file drifts from the filesystem.
+const CACHE = 'wordle-14f3198d';
 
 const ASSETS = [
   './',
-  './index.html',
-  './manifest.json',
   './css/styles.css',
   './fonts/rubik-latin-var.woff2',
-  './js/main.js',
-  './js/config.js',
-  './js/game.js',
-  './js/words.js',
-  './js/data/words-data.js',
-  './js/storage.js',
-  './js/settings.js',
-  './js/share.js',
-  './js/ui/board.js',
-  './js/ui/keyboard.js',
-  './js/ui/modal.js',
-  './js/ui/toast.js',
-  './js/ui/intro.js',
-  './js/ui/settings-modal.js',
+  './icons/apple-touch-icon.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
-  './icons/apple-touch-icon.png',
+  './index.html',
+  './js/config.js',
+  './js/data/words-data.js',
+  './js/game.js',
+  './js/main.js',
+  './js/settings.js',
+  './js/storage.js',
+  './js/ui/board.js',
+  './js/ui/focus-trap.js',
+  './js/ui/intro.js',
+  './js/ui/keyboard.js',
+  './js/ui/modal.js',
+  './js/ui/settings-modal.js',
+  './js/ui/toast.js',
+  './js/words.js',
+  './manifest.json',
 ];
 
 self.addEventListener('install', (event) => {
