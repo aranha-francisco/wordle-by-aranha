@@ -477,11 +477,13 @@ button {
 
 .key[data-wide="true"] { flex: 1.5 1 0; }
 
-/* Icon keys (enter / backspace). Sized off the key height so they track the
-   keyboard across breakpoints instead of needing their own media queries. */
+/* Icon keys (enter / backspace). Sized in em, NOT off --key-h: the key letters
+   are a fixed font-size, so a height-derived icon drifts out of step with them
+   as the keys grow. In em, icon and letters scale together and the stroke stays
+   equal to the letter stem at every breakpoint. */
 .key svg {
-  width: clamp(17px, calc(var(--key-h) * 0.4), 24px);
-  height: clamp(17px, calc(var(--key-h) * 0.4), 24px);
+  width: 1.6em;
+  height: 1.6em;
   display: block;
 }
 .key[data-key="Enter"],
