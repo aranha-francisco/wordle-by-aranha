@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>WORDLE</title>
+<meta name="description" content="An unlimited five-letter word guessing game.">
+<meta name="theme-color" content="#121516">
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WORDLE">
+
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <h1 class="title">WORDLE</h1>
+    <p class="subtitle">by aranha</p>
+  </header>
+
+  <main class="main">
+    <div class="board" id="board" role="grid" aria-label="Guess board"></div>
+  </main>
+
+  <div class="keyboard" id="keyboard" role="group" aria-label="Keyboard"></div>
+
+  <div class="toast-wrap"><div class="toast" id="toast" role="status" aria-live="polite"></div></div>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-word">
+    <h2 class="modal-word" id="modal-word"></h2>
+    <p class="modal-sub" id="modal-sub"></p>
+    <div class="pattern" id="modal-pattern" aria-hidden="true"></div>
+    <div class="stats" id="modal-stats"></div>
+    <div class="modal-actions">
+      <button class="btn" id="btn-new" type="button">New game</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
