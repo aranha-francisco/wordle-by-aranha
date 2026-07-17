@@ -1,6 +1,6 @@
 {
-  "name": "WORDLE",
-  "short_name": "WORDLE",
+  "name": "wordle",
+  "short_name": "wordle",
   "description": "An unlimited five-letter word guessing game.",
   "start_url": "./index.html",
   "scope": "./",
