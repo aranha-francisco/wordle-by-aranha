@@ -29,18 +29,26 @@ const SVG = (paths) =>
 const ICONS = {
   /* backspace: tag with a 90-degree point, x optically centred in the box.
    *
-   * The box is wider than the obvious choice and the x is NOT on the rectangle's
-   * midpoint, on purpose. The rectangle's left edge is where the diagonals meet
-   * (x=9.8) and carries no stroke, but the right edge is a real wall whose inner
-   * face sits half a stroke inboard (21.71 - 1.24 = 20.47). Centring on the
-   * midpoint left the x 3.4x tighter on the right than the left — it visibly
-   * hugged the wall. Centring between the bare left line and the right wall's
-   * INNER FACE puts both gaps at ~1.6.
+   * Two deliberate offsets here, both of which look like mistakes and are not:
+   *
+   * 1. The x is NOT on the rectangle's midpoint. The rectangle's left edge is
+   *    where the diagonals meet (x=9.25) and carries no stroke, but the right
+   *    edge is a real wall whose inner face sits half a stroke inboard
+   *    (20.25 - 1.24 = 19.01). Midpoint-centring left the x 3.4x tighter on the
+   *    right — it visibly hugged the wall. Centring between the bare left line
+   *    and the wall's INNER FACE puts both gaps at ~1.34.
+   *
+   * 2. The whole shape is pushed ~1 unit left of the viewBox centre. A 90-degree
+   *    point on a 14-tall box must project 7 units left, and a thin point carries
+   *    far less visual weight than the box, so bbox-centring put the ink mass 2
+   *    units right of centre and the icon read as shifted right. The shape can't
+   *    be mass-centred without clipping the point, so this splits the difference:
+   *    mass lands ~1 right, bbox ~1 left, and it reads centred.
    */
   Backspace: SVG(
-    '<path d="M9.8 5H19.71A2 2 0 0 1 21.71 7V17A2 2 0 0 1 19.71 19H9.8L2.8 12Z"/>' +
-    '<line x1="12.64" y1="9.5" x2="17.64" y2="14.5"/>' +
-    '<line x1="17.64" y1="9.5" x2="12.64" y2="14.5"/>'
+    '<path d="M9.25 5H18.25A2 2 0 0 1 20.25 7V17A2 2 0 0 1 18.25 19H9.25L2.25 12Z"/>' +
+    '<line x1="11.83" y1="9.5" x2="16.43" y2="14.5"/>' +
+    '<line x1="16.43" y1="9.5" x2="11.83" y2="14.5"/>'
   ),
   // enter: riser turning left into a shaft, 90-degree arrowhead
   Enter: SVG(
