@@ -808,6 +808,27 @@ button {
 .swatch[data-accent="rose"]     { --swatch: #a33e68; }
 .swatch[data-accent="charcoal"] { --swatch: #4d4a44; }
 
+/* Quiet Ko-fi aside at the foot of the settings sheet. Reads as secondary text,
+   not a call to action: dim by default, a small lift to the accent on hover or
+   tap. A hairline above sets it apart from the settings without shouting. */
+.kofi {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 2px;
+  padding-top: 16px;
+  border-top: 1px solid var(--surface-border);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: var(--fw-regular);
+  text-decoration: none;
+  transition: color 140ms ease;
+}
+
+.kofi svg { width: 15px; height: 15px; flex: none; }
+.kofi:hover, .kofi:active { color: var(--accent-soft); }
+
 .btn {
   flex: 1;
   min-height: 44px;

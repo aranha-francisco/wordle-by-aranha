@@ -1,7 +1,7 @@
 // CACHE and ASSETS below are GENERATED — run `npm run build:sw` after changing
 // any shipped file. The cache name is a hash of the assets' contents, so it can't
 // go stale; test/build.test.js fails if this file drifts from the filesystem.
-const CACHE = 'wordle-49ea8f29';
+const CACHE = 'wordle-135b22e7';
 
 const ASSETS = [
   './',
